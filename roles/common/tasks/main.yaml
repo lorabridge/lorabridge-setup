@@ -52,4 +52,4 @@
 
 - name: change hostname
   ansible.builtin.hostname:
-    name: "{{ hostname }}"
+    name: "{{hostname|default(lookup('community.general.random_pet', words=2, prefix='lorabridge' if 'bridges' in group_names else 'loragateway')) }}"
