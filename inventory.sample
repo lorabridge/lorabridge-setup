@@ -1,0 +1,7 @@
+[bridges]
+# vm with openssh-servera and python installed
+# ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+<bridges ip address> hostname=<desired hostname>
+
+[gateways]
+<gateway ip address> hostname=<desired hostname>

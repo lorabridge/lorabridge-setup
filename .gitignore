@@ -1,0 +1,10 @@
+group_vars/all/*.yaml
+!group_vars/all/all.yaml
+git_keys/*
+!git_keys/.gitkeep
+venv*
+inventory
+*.retry
+/*.yaml
+!lorabridge.yaml
+!requirements.yaml

@@ -1,0 +1,144 @@
+---
+- name: Download docker install convenience script
+  ansible.builtin.get_url:
+    url: https://get.docker.com
+    dest: /usr/local/sbin/get-docker.sh
+    mode: '0770'
+
+- name: Install docker
+  block:
+    - name: Execute docker installation script
+      ansible.builtin.shell: /usr/local/sbin/get-docker.sh
+      args:
+        creates: /usr/bin/docker
+  rescue:
+    - name: try to resolve error by rebooting (e.g. after kernel upgrade)
+      reboot:
+    - name: Execute docker installation script
+      ansible.builtin.shell: /usr/local/sbin/get-docker.sh
+      args:
+        creates: /usr/bin/docker
+
+- name: Ensure group "docker" exists
+  ansible.builtin.group:
+    name: docker
+    state: present
+
+- name: Add the user 'pi' with a bash shell, appending the group 'admins' and 'developers' to the user's groups
+  ansible.builtin.user:
+    name: pi
+    state: present
+    groups: docker
+    append: yes
+  # notify: reset ssh connection
+  # meta: reset_connection fails when used inside handlers (likely an ansible bug)
+
+  #   Using module file /home/td/.local/share/virtualenvs/lorabridge-setup-4wdjBX7t/lib/python3.10/site-packages/ansible/modules/meta.py
+  # fatal: [192.168.1.193]: FAILED! => {
+  #     "msg": "module (ansible.builtin.meta) is missing interpreter line"
+  # }
+
+
+# - name: trigger current handlers
+#   ansible.builtin.meta: flush_handlers
+
+- name: reset ssh connection
+  ansible.builtin.meta: reset_connection
+  # meta ignores when conditions
+
+# - name: copy lorabridgepi github personal access token
+#   ansible.builtin.copy:
+#     dest: /home/pi/.github_pac
+#     content: "{{ github_pac }}"
+
+- name: clone git repository
+  ansible.builtin.git:
+    repo: "https://{{ github_user }}:{{ github_pac }}@github.com/lorabridge/lorabridge.git"
+    dest: /home/pi/lorabridge
+    accept_newhostkey: yes
+    recursive: no
+  become: no
+  no_log: true
+
+- name: generate chirpstack api secret
+  local_action:
+    module: ansible.builtin.command
+    cmd: openssl rand -base64 32
+  register: chirp_secret
+  when: "'gateways' in group_names"
+  become: no
+
+- name:
+  ansible.builtin.set_fact:
+    dev_eui: "{{ lookup('community.general.random_string', override_all=hex_chars, length=16) }}"
+    dev_key: "{{ lookup('community.general.random_string', override_all=hex_chars, length=32) }}"
+    basic_auth_pw: "{{ lookup('community.general.random_string', override_special='!#$%&()*+,-./:;<=>?@[]^_`{|}~', length=20) }}"
+    # remove " and ' from specials, because ansible uses read_token from shlex.py which cannot handle quotes (task: generate basic auth credentials)
+    # remove \ because htpasswd throws error
+  vars:
+    hex_chars: '0123456789ABCDEF'
+  run_once: true
+  no_log: true
+
+- name: print basic auth password
+  ansible.builtin.debug:
+    msg: "generated basic auth password: {{ basic_auth_pw }}"
+
+- name: generate basic auth credentials
+  local_action:
+    module: ansible.builtin.command
+    cmd: "htpasswd -nbB admin {{ basic_auth_pw }}"
+  register: basic_auth_creds
+  when: "'bridges' in group_names"
+  become: no
+  no_log: true
+  
+- name: template .env file
+  ansible.builtin.template:
+    src: env
+    dest: /home/pi/lorabridge/{{ 'bridge' if 'bridges' in group_names else 'gateway'}}/.env
+    owner: pi
+    group: pi
+    mode: 0664
+    force: no
+
+- name: install dependencies for docker-compose
+  apt:
+    name: "{{ packages }}"
+    state: latest
+    force: yes
+    update_cache: yes
+  vars:
+    packages:
+      - python3-pip
+
+- name: install ansible docker_compose module requirements
+  pip:
+    name: "{{ packages }}"
+  vars:
+    packages:
+      - docker
+      - PyYAML
+
+- name: Log into github package repository
+  community.docker.docker_login:
+    registry_url: ghcr.io
+    username: "{{ github_user }}"
+    password: "{{ github_pac }}"
+  become: no
+  # no_log: true
+
+- name: enable spi
+  ansible.builtin.command: raspi-config nonint do_spi 0
+
+- name: pull containers (this may take a while)
+  ansible.builtin.command: docker compose pull
+  args:
+    chdir: /home/pi/lorabridge/{{ 'bridge' if 'bridges' in group_names else 'gateway'}}
+  become: no
+
+- name: start containers
+  ansible.builtin.command: docker compose up -d
+  args:
+    chdir: /home/pi/lorabridge/{{ 'bridge' if 'bridges' in group_names else 'gateway'}}
+

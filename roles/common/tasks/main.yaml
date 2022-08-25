@@ -1,0 +1,55 @@
+---
+- name: change keyboard layout to de
+  ansible.builtin.lineinfile:
+    path: /etc/default/keyboard
+    regexp: '^XKBLAYOUT='
+    line: 'XKBLAYOUT="de"'
+  register: lang
+
+- name: apply keyboard layout
+  ansible.builtin.command: /usr/sbin/dpkg-reconfigure -f noninteractive keyboard-configuration
+  when: lang.changed
+
+- name: apply keyboard layout
+  ansible.builtin.systemd:
+    name: keyboard-setup
+    state: restarted
+  when: lang.changed
+
+# - name: remove cdrom from apt sources
+#   lineinfile:
+#     path: /etc/apt/sources.list
+#     regexp: '^deb cdrom:'
+#     state: absent
+
+- name: install services
+  ansible.builtin.apt:
+    name: "{{ packages }}"
+    state: latest
+    force: yes
+    update_cache: yes
+  vars:
+    packages:
+      # - open-vm-tools
+      - htop
+      - vim
+      - git
+      # - net-tools
+
+- name: dist-upgrade
+  ansible.builtin.apt:
+    upgrade: dist
+    update_cache: yes
+    dpkg_options: 'force-confold,force-confdef'
+
+- name: modify hosts file
+  ansible.builtin.template:
+    src: hosts
+    dest: /etc/hosts
+    owner: root
+    group: root
+    mode: 0644
+
+- name: change hostname
+  ansible.builtin.hostname:
+    name: "{{ hostname }}"

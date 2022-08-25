@@ -1,0 +1,14 @@
+---
+- hosts: all
+  remote_user: "{{ pi_user }}"
+  become: yes
+  become_method: sudo
+  tasks:
+    - import_role:
+        name: common
+      tags:
+        - common
+    - import_role:
+        name: docker
+      tags:
+        - docker

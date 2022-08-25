@@ -1,0 +1,31 @@
+MQTT_USERNAME=lorabridge
+MQTT_PASSWORD=lorabridge
+MQTT_HOST=mqtt
+MQTT_PORT=1883
+
+REDIS_HOST=redis
+REDIS_PORT=6379
+REDIS_DB=0
+
+{% if 'bridges' in group_names %}
+MQTT_TOPIC=zigbee2mqtt
+
+REDIS_LIST=lorabridge_data
+
+LORA_DEV_EUI={{ dev_eui }}
+LORA_DEV_KEY={{ dev_key }}
+
+BASIC_AUTH='{{ basic_auth_creds.stdout }}'
+{% endif %}
+
+{% if 'gateways' in group_names %}
+CHIRP_TOPIC=application/00000000-0000-0000-0000-000000000001/device
+
+DEV_MAN_TOPIC=devicemanager
+DEV_DISCOVERY_TOPIC=lorabridge/discovery
+DEV_STATE_TOPIC=lorabridge/state
+
+CHIRPSTACK_DEV_EUI=\x{{ dev_eui }}
+CHIRPSTACK_DEV_KEY=\x{{ dev_key }}
+CHIRPSTACK_API_SECRET={{ chirp_secret.stdout }}
+{% endif %}
