@@ -80,9 +80,9 @@
   run_once: true
   no_log: true
 
-- name: print basic auth password
-  ansible.builtin.debug:
-    msg: "generated basic auth password: {{ basic_auth_pw }}"
+# - name: print basic auth password
+#   ansible.builtin.debug:
+#     msg: "generated basic auth password: {{ basic_auth_pw }}"
 
 - name: generate basic auth credentials
   local_action:
@@ -101,6 +101,7 @@
     group: pi
     mode: 0664
     force: no
+  notify: print basic auth password
 
 - name: install dependencies for docker-compose
   apt:
