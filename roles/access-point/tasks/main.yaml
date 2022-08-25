@@ -1,0 +1,54 @@
+---
+- name: Download raspap install script
+  ansible.builtin.get_url:
+    url: https://install.raspap.com
+    dest: /tmp/install-raspap.sh
+    mode: '0770'
+
+- name: install raspap
+  ansible.builtin.command:
+    cmd: /tmp/install-raspap.sh --yes --openvpn 0 --adblock 0
+  # when: "'bridges' in group_names"
+
+- name: generate random strings
+  ansible.builtin.set_fact:
+    raspap_basic_pw: "{{ lookup('community.general.random_string', override_special='!#$%&()*+,-./:;<=>?@[]^_`{|}~', length=20) }}"
+    raspap_wpa_passphrase: "{{ lookup('community.general.random_string', override_special='!#$%&()*+,-./:;<=>?@[]^_`{|}~', length=20) }}"
+    raspap_wpa_ssid: "lorabridge-{{ lookup('community.general.random_pet', words=3) }}"
+    # remove " and ' from specials, because ansible uses read_token from shlex.py which cannot handle quotes (task: generate basic auth credentials)
+    # remove \ because htpasswd throws error
+  run_once: true
+  no_log: true
+
+- name: change ssid and passphrase
+  ansible.builtin.lineinfile:
+    path: /etc/hostapd/hostapd.conf
+    search_string: "{{ item.old }}"
+    line: "{{ item.new }}"
+  loop:
+    - { old: 'ssid=raspi-webgui', new: "ssid={{ raspap_wpa_ssid }}" }
+    - { old: 'wpa_passphrase=ChangeMe', new: 'wpa_passphrase={{raspap_wpa_passphrase}}' }
+  notify: print raspap ssid and pw
+  # when: "'bridges' in group_names"
+
+- name: generate basic auth credentials
+  local_action:
+    module: ansible.builtin.command
+    cmd: "htpasswd -nbBC10 admin {{ raspap_basic_pw }}"
+  register: raspap_auth_creds
+  # when: "'bridges' in group_names"
+  become: no
+  no_log: true
+
+- name: change webinterface user and password
+  ansible.builtin.copy:
+    dest: /etc/raspap/raspap.auth
+    content: "{{ raspap_auth_creds|replace(':', '\n', 1) }}"
+    owner: www-data
+    group: www-data
+    mode: 0644
+  notify: print raspap web auth password
+  register: change_ap
+
+  
+  

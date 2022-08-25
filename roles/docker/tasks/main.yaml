@@ -13,7 +13,7 @@
         creates: /usr/bin/docker
   rescue:
     - name: try to resolve error by rebooting (e.g. after kernel upgrade)
-      reboot:
+      ansible.builtin.reboot:
     - name: Execute docker installation script
       ansible.builtin.shell: /usr/local/sbin/get-docker.sh
       args:
@@ -68,7 +68,7 @@
   when: "'gateways' in group_names"
   become: no
 
-- name:
+- name: generate random strings
   ansible.builtin.set_fact:
     dev_eui: "{{ lookup('community.general.random_string', override_all=hex_chars, length=16) }}"
     dev_key: "{{ lookup('community.general.random_string', override_all=hex_chars, length=32) }}"

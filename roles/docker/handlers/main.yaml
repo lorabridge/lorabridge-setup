@@ -4,4 +4,4 @@
 
 - name: print basic auth password
   ansible.builtin.debug:
-    msg: "generated basic auth password: {{ basic_auth_pw }}"
+    msg: "generated basic auth password: {{ basic_auth_pw }} | (user: admin)"

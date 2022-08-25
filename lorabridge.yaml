@@ -4,11 +4,45 @@
   become: yes
   become_method: sudo
   tasks:
-    - import_role:
+    - ansible.builtin.import_role:
         name: common
       tags:
         - common
-    - import_role:
+    - ansible.builtin.import_role:
         name: docker
       tags:
         - docker
+    - ansible.builtin.import_role:
+        name: access-point
+      tags:
+        - access-point
+      when: "'bridges' in group_names"
+
+  post_tasks:
+    - name: install tools
+      ansible.builtin.apt:
+        name: "{{ packages }}"
+        state: latest
+        force: yes
+        update_cache: yes
+      vars:
+        packages:
+          - screen
+      tags:
+        - access-point
+
+    - name: check whether reboot is necessary
+      ansible.builtin.debug:
+        msg: rebooting device
+      changed_when: yes
+      when: change_ap is defined and change_ap.changed
+      notify: reboot device
+      tags:
+        - access-point
+
+  handlers:
+    - name: reboot device
+      ansible.builtin.command:
+        cmd: "/usr/bin/screen -dm bash -c 'sleep 5; /usr/sbin/reboot'"
+      async: 0
+      poll: 0

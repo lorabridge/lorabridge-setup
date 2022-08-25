@@ -5,6 +5,7 @@ name = "pypi"
 
 [packages]
 ansible-core = "<2.14,>=2.13"
+petname = "*"
 
 [dev-packages]
 

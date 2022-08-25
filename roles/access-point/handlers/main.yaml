@@ -1,0 +1,8 @@
+---
+- name: print raspap web auth password
+  ansible.builtin.debug:
+    msg: "generated basic auth password: {{ raspap_basic_pw }} | (user: admin)"
+
+- name: print raspap ssid and pw
+  ansible.builtin.debug:
+    msg: "access point ssid: {{ raspap_wpa_ssid }} | pw: {{ raspap_wpa_passphrase }}"
