@@ -70,9 +70,9 @@
 
 - name: generate random strings
   ansible.builtin.set_fact:
-    dev_eui: "{{ lookup('community.general.random_string', override_all=hex_chars, length=16) }}"
-    dev_key: "{{ lookup('community.general.random_string', override_all=hex_chars, length=32) }}"
-    basic_auth_pw: "{{ lookup('community.general.random_string', override_special='!#$%&()*+,-./:;<=>?@[]^_`{|}~', length=20) }}"
+    dev_eui: "{{ dev_eui|default(lookup('community.general.random_string', override_all=hex_chars, length=16)) }}"
+    dev_key: "{{ dev_key|default(lookup('community.general.random_string', override_all=hex_chars, length=32)) }}"
+    basic_auth_pw: "{{ basic_auth_pw|default(lookup('community.general.random_string', override_special='!#$%&()*+,-./:;<=>?@[]^_`{|}~', length=20)) }}"
     # remove " and ' from specials, because ansible uses read_token from shlex.py which cannot handle quotes (task: generate basic auth credentials)
     # remove \ because htpasswd throws error
   vars:
