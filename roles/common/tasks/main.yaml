@@ -53,3 +53,10 @@
 - name: change hostname
   ansible.builtin.hostname:
     name: "{{hostname|default(lookup('community.general.random_pet', words=2, prefix='lorabridge' if 'bridges' in group_names else 'loragateway')) }}"
+
+- name: disable usb autosuspend
+  block:
+    - name: disable usb autosuspend for current boot
+      ansible.builtin.shell: "echo -1 > /sys/module/usbcore/parameters/autosuspend"
+    - name: disable usb autosuspend permanently
+      ansible.builtin.shell: "echo $(cat /boot/cmdline.txt | python3 -c 'import sys;print(sys.stdin.read().strip())') usbcore.autosuspend=-1 > /boot/cmdline.txt"
