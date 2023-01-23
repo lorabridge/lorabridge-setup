@@ -1,61 +1,81 @@
-# LoRaBridge Setup
+# LoRaBridge Ansible Setup
+This repository is part of the [LoRaBridge](https://github.com/lorabridge/lorabridge) project and provides an ansible project for setting up LoRaBridge devices via ssh.
+This setup method automates several steps of the installation process of bridge and gateways devices. You need to clone this repository.
 
-This repository provides an ansible project for setting up LoRaBridge devices.
+You need to prepare the Raspberry Pi devices as described in the [docs]().
 
-## Ansible Controller Requirements
+### Clone Setup Repository
 
-Requirements listed in files:
+Download the code for the Ansible setup and switch inside the folder:
+
+```bash
+git clone https://github.com/lorabridge/lorabridge-setup.git
+cd lorabridge-setup
+```
+
+### Ansible Controller Requirements
+
+You need to install the requirements listed in following files inside the repository on the host running the setup:
 
 - `apt-requirements.txt`
 - `Pipfile`
 - `requirements.yml`
 
 > Install requirements with e.g.
+>```bash
+>xargs apt install -y < apt-requirements.txt
+># apt-get install $(cat apt-requirements.txt | tr '\n' ' ')
+>pipenv install
+>ansible-galaxy install -r requirements.yml
+>```
 
-```bash
-xargs apt install -y < apt-requirements.txt
-# apt-get install $(cat apt-requirements.txt | tr '\n' ' ')
-pipenv install
-ansible-galaxy install -r requirements.yml
+### Inventory file
+
+Copy the `inventory.sample` file, name it `inventory` and Replace the placeholders with the actual values of the bridge and gateway devices.
+
+```ini
+[bridges]
+<bridges ip address> hostname=<desired hostname>
+
+[gateways]
+<gateway ip address> hostname=<desired hostname>
 ```
 
-> ```bash
-> ansible-vault encrypt_string --ask-vault-pass --stdin-name password
-> ```
+### Configuration Variables
 
-## Inventory file
-
-Copy the `inventory.sample` file, name it `inventory` and insert the dhcp address of the new vm.
-
-## Command
-
-- Default playbook
-  - `ansible-playbook -i inventory lorabridge.yaml --ask-become-pass --ask-pass`
-
-**Note:**
-
-- The repo directory **needs** to have `o-w` permissions
-- If you add a ssh key to the vm, remove the `--ask-pass`
-- Add `--ask-vault-pass` if you are using vault strings for passwords
-- WSL and Vagrant users *should* read [this](#wslvagrant)
-
-### WSL/Vagrant
-
-Since Ansible 2.4.6 `./ansible.cfg` inside a `o+w` folder is **not loaded**:
-
-> If Ansible were to load ansible.cfg from a world-writable current working directory, it would create a serious security risk. Another user could place their own config file there, designed to make Ansible run malicious code both locally and remotely, possibly with elevated privileges. For this reason, Ansible will not automatically load a config file from the current working directory if the directory is world-writable.
-
-The "correct fix" is to correct the mount options, in order to enable changing permissions on NTFS filesystems:
-
-> For more details on the correct settings, see:
->
-> - for Vagrant, Jeremy Kendall's [blog post](http://jeremykendall.net/2013/08/09/vagrant-synced-folders-permissions/) covers synced folder permissions.
-> - for WSL, the [WSL docs](https://docs.microsoft.com/en-us/windows/wsl/wsl-config#set-wsl-launch-settings) and this [Microsoft blog post](https://blogs.msdn.microsoft.com/commandline/2018/01/12/chmod-chown-wsl-improvements/) cover mount options.
-
-Since this repository is intended to work *without* changing your environment, one can use this alternative commands instead:
-
-**WARNING: USE AT YOUR OWN RISK**
+Configuration variables are defined in following places:
 
 ```bash
-ANSIBLE_CONFIG=./ansible.cfg ansible-playbook -i inventory lorabridge.yaml --ask-become-pass --ask-pass --ask-vault-pass
+group_vars/all/all.yaml
+group_vars/bridges/*
+group_ars/gateways/*
+roles/<role name>/defaults/main.yaml
 ```
+
+You can overwrite them by creating a new `yaml` file (e.g. `myconfig.yaml`) inside `group_vars/all/`, `group_vars/bridges/` or `group_vars/gateway/` and configuring the desired value in there.
+Doing this inside `group_vars/all/` affects all devices, `group_vars/bridges/` affects only bridge devices and `group_vars/gateways/` affects only gateway devices.
+
+Usually you will not need to change the configuration unless you changed the default user name.
+>Example for changing the user name to user1:
+>- Create a custom configuration file `group_vars/all/custom.yaml`
+>- Insert the following content:
+>```bash
+>---
+>pi_user: "user1"
+>```
+
+### Executing the setup
+
+Start the setup with the following command:
+
+```bash
+ansible-playbook -i inventory lorabridge.yaml --ask-become-pass --ask-pass
+```
+
+## License
+
+All the LoRaBridge software components and the documentation are licensed under GNU General Public License 3.0.
+
+## Acknowledgements
+
+The financial support from Internetstiftung/Netidee is gratefully acknowledged. The mission of Netidee is to support development of open-source tools for more accessible and versatile use of the Internet in Austria.
