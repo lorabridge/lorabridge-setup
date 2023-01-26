@@ -33,12 +33,6 @@
   # notify: reset ssh connection
   # meta: reset_connection fails when used inside handlers (likely an ansible bug)
 
-  #   Using module file /home/td/.local/share/virtualenvs/lorabridge-setup-4wdjBX7t/lib/python3.10/site-packages/ansible/modules/meta.py
-  # fatal: [192.168.1.193]: FAILED! => {
-  #     "msg": "module (ansible.builtin.meta) is missing interpreter line"
-  # }
-
-
 # - name: trigger current handlers
 #   ansible.builtin.meta: flush_handlers
 
@@ -53,7 +47,8 @@
 
 - name: clone git repository
   ansible.builtin.git:
-    repo: "https://{{ github_user }}:{{ github_pac }}@github.com/lorabridge/lorabridge.git"
+    # repo: "https://{{ github_user }}:{{ github_pac }}@github.com/lorabridge/lorabridge.git"
+    repo: "https://github.com/lorabridge/lorabridge.git"
     dest: /home/pi/lorabridge
     accept_newhostkey: yes
     recursive: no
@@ -121,12 +116,12 @@
       - docker
       - PyYAML
 
-- name: Log into github package repository
-  community.docker.docker_login:
-    registry_url: ghcr.io
-    username: "{{ github_user }}"
-    password: "{{ github_pac }}"
-  become: no
+# - name: Log into github package repository
+#   community.docker.docker_login:
+#     registry_url: ghcr.io
+#     username: "{{ github_user }}"
+#     password: "{{ github_pac }}"
+#   become: no
   # no_log: true
 
 - name: enable spi
