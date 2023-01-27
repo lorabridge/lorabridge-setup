@@ -127,6 +127,9 @@
 - name: enable spi
   ansible.builtin.command: raspi-config nonint do_spi 0
 
+- name: enable i2c
+  ansible.builtin.command: raspi-config nonint do_i2c 0
+
 - name: pull containers (this may take a while)
   ansible.builtin.command: docker compose pull
   args:
