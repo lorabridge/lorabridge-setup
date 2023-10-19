@@ -24,7 +24,7 @@
     name: docker
     state: present
 
-- name: Add the user 'pi' with a bash shell, appending the group 'admins' and 'developers' to the user's groups
+- name: Add the user 'pi' with a bash shell, appending the group 'docker' to the user's groups
   ansible.builtin.user:
     name: pi
     state: present
@@ -108,9 +108,15 @@
     packages:
       - python3-pip
 
+- name: retrieve pip version
+  ansible.builtin.command: "pip3 --version"
+  register: pip_version
+  become: no
+
 - name: install ansible docker_compose module requirements
   pip:
     name: "{{ packages }}"
+    extra_args: "{{ '--break-system-packages' if (pip_version.stdout | ansible.builtin.split(' '))[1] is version('23.0.1', 'ge') else '' }}"
   vars:
     packages:
       - docker
