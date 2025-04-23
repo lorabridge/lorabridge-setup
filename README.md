@@ -1,3 +1,6 @@
+> [!WARNING]
+> This project is **deprecated** and was superseded by [LoRaBridge2](https://github.com/lorabridge2). The replacement for **this** repository is [setup](https://github.com/lorabridge2/setup).
+> 
 # LoRaBridge Ansible Setup
 This repository is part of the [LoRaBridge](https://github.com/lorabridge/lorabridge) project and provides an ansible project for setting up LoRaBridge devices via ssh.
 This setup method automates several steps of the installation process of bridge and gateways devices. You need to clone this repository.
